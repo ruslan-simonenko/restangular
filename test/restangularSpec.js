@@ -1133,4 +1133,58 @@ describe("Restangular", function() {
       $httpBackend.flush();
     });
   });
+
+  describe("Works without restangularization (usePlain is true)", function() {
+    var plainRestangular;
+    beforeEach(function () {
+      plainRestangular = Restangular.withConfig(function (RestangularConfigurer) {
+        RestangularConfigurer.setUsePlain(true);
+      });
+      restangularAccounts = plainRestangular.all("accounts");
+      restangularAccount0 = plainRestangular.one("accounts", 0);
+      restangularAccount1 = plainRestangular.one("accounts", 1);
+    });
+
+    it("Manually called restangularization works", function () {
+      var collection = angular.copy(accountsModel);
+
+      plainRestangular.restangularizeCollection(null, collection, 'accounts');
+
+      expect(_.has(collection, 'get')).toBe(true);
+      expect(_.has(collection[0], 'get')).toBe(true);
+
+      expect(collection.getRestangularUrl()).toBe('/accounts');
+      expect(collection[0].getRestangularUrl()).toBe('/accounts/0');
+    });
+
+    it("get() should work", function() {
+      restangularAccounts.get(0).then(function(account) {
+        expect(account).toEqual(accountsModel[0]);
+      });
+
+      $httpBackend.flush();
+    });
+
+    it("getList() should work", function() {
+      restangularAccounts.getList().then(function(accounts) {
+        expect(accounts).toEqual(accountsModel);
+      });
+
+      $httpBackend.flush();
+    });
+
+    it("Further restangularization with useCannonicalId set to true should work", function () {
+      r = Restangular.withConfig(function (RestangularConfigurer) {
+        RestangularConfigurer.setUseCannonicalId(true);
+      });
+
+      r.all("accounts").getList().then(function(receivedAccounts) {
+        r.restangularizeElement(null, receivedAccounts[0], "accounts");
+        receivedAccounts[0].id = 17;
+        expect(receivedAccounts[0].getRestangularUrl()).toBe('/accounts/0');
+      });
+
+      $httpBackend.flush();
+    });
+  })
 });

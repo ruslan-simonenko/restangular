@@ -49,6 +49,7 @@ You can also **check out [a video introduction of a talk I gave at Devoxx France
       - [setDefaultHeaders](#setdefaultheaders)
       - [setRequestSuffix](#setrequestsuffix)
       - [setUseCannonicalId](#setusecannonicalid)
+      - [setUsePlain](#setuseplain)
     - [How to configure them globally](#how-to-configure-them-globally)
       - [Configuring in the config](#configuring-in-the-config)
       - [Configuring in the run](#configuring-in-the-run)
@@ -552,6 +553,12 @@ You can set this to either `true` or `false`. By default it's false. If set to t
 #### setEncodeIds
 
 You can set here if you want to URL Encode IDs or not. By default, it's true.
+
+#### setUsePlain
+
+By default Restangular decorates received objects with helping functions. Setting this to `true` disables this behaviour. Doesn't affect user-defined transformations (ones set with `onBeforeElemRestangularized` or `addElementTransformer`). If necessary `restangularizeElement` and `restangularizeCollection` may be applied to the object afterwards.
+
+Please note that when caching is configured through `$http` service, decoration is performed each time you are performing a request (despite response is cached or not). In cases when you rely on caching and make a lot of restangular calls with the same parameters, setting this flag to `true` may significantly boost the performance (especially when you are accessing a cached list).
 
 **[Back to top](#table-of-contents)**
 
@@ -1161,14 +1168,14 @@ With that, you'd get what you need :)
 
 #### **How can I send files in my request using Restangular?**
 
-This can be done using the customPOST / customPUT method. Look at the following example: 
+This can be done using the customPOST / customPUT method. Look at the following example:
 ````js
 Restangular.all('users')
           .withHttpConfig({transformRequest: angular.identity})
-          .customPOST(formData, undefined, undefined, 
+          .customPOST(formData, undefined, undefined,
             { 'Content-Type': undefined });
 ````
-This basically tells the request to use the *Content-Type: multipart/form-data* as the header. Also *formData* is the body of the request, be sure to add all the params here, including the File you want to send of course. There is an issue already closed but with a lot of information from other users and @mgonto as well: [GitHub - Restangular](https://github.com/mgonto/restangular/issues/420) 
+This basically tells the request to use the *Content-Type: multipart/form-data* as the header. Also *formData* is the body of the request, be sure to add all the params here, including the File you want to send of course. There is an issue already closed but with a lot of information from other users and @mgonto as well: [GitHub - Restangular](https://github.com/mgonto/restangular/issues/420)
 
 #### **How do I handle CRUD operations in a List returned by Restangular?**
 
