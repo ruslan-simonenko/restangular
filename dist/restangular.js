@@ -1,6 +1,6 @@
 /**
  * Restful Resources service for AngularJS apps
- * @version v1.4.0 - 2015-04-03 * @link https://github.com/mgonto/restangular
+ * @version v1.5.1 - 2016-01-08 * @link https://github.com/mgonto/restangular
  * @author Martin Gontovnikas <martin@gon.to>
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */(function() {
@@ -143,6 +143,16 @@ restangular.provider('Restangular', function() {
       }
 
       config.urlCreator = name;
+      return this;
+    };
+
+    /**
+     * Sets the restangularization behaviour. If usePlain is set, then no additional fields will be added to response object (with exception of one created by
+     * useCannonicalId feature).
+     */
+    config.usePlain = _.isUndefined(config.usePlain) ? false : config.usePlain;
+    object.setUsePlain = function(value) {
+      config.usePlain = value;
       return this;
     };
 
@@ -956,50 +966,62 @@ restangular.provider('Restangular', function() {
       function restangularizeElem(parent, element, route, fromServer, collection, reqParams) {
         var elem = config.onBeforeElemRestangularized(element, false, route);
 
-        var localElem = restangularizeBase(parent, elem, route, reqParams, fromServer);
+        var localElem;
+        if (config.usePlain && fromServer) {
+          localElem = elem;
+        } else {
+          localElem = restangularizeBase(parent, elem, route, reqParams, fromServer);
 
-        if (config.useCannonicalId) {
-          localElem[config.restangularFields.cannonicalId] = config.getIdFromElem(localElem);
+          if (config.useCannonicalId) {
+            localElem[config.restangularFields.cannonicalId] = config.getIdFromElem(localElem);
+          }
+
+          if (collection) {
+            localElem[config.restangularFields.getParentList] = function() {
+              return collection;
+            };
+          }
+
+          localElem[config.restangularFields.restangularCollection] = false;
+          localElem[config.restangularFields.get] = _.bind(getFunction, localElem);
+          localElem[config.restangularFields.getList] = _.bind(fetchFunction, localElem);
+          localElem[config.restangularFields.put] = _.bind(putFunction, localElem);
+          localElem[config.restangularFields.post] = _.bind(postFunction, localElem);
+          localElem[config.restangularFields.remove] = _.bind(deleteFunction, localElem);
+          localElem[config.restangularFields.head] = _.bind(headFunction, localElem);
+          localElem[config.restangularFields.trace] = _.bind(traceFunction, localElem);
+          localElem[config.restangularFields.options] = _.bind(optionsFunction, localElem);
+          localElem[config.restangularFields.patch] = _.bind(patchFunction, localElem);
+          localElem[config.restangularFields.save] = _.bind(save, localElem);
+
+          addCustomOperation(localElem);
         }
 
-        if (collection) {
-          localElem[config.restangularFields.getParentList] = function() {
-            return collection;
-          };
-        }
-
-        localElem[config.restangularFields.restangularCollection] = false;
-        localElem[config.restangularFields.get] = _.bind(getFunction, localElem);
-        localElem[config.restangularFields.getList] = _.bind(fetchFunction, localElem);
-        localElem[config.restangularFields.put] = _.bind(putFunction, localElem);
-        localElem[config.restangularFields.post] = _.bind(postFunction, localElem);
-        localElem[config.restangularFields.remove] = _.bind(deleteFunction, localElem);
-        localElem[config.restangularFields.head] = _.bind(headFunction, localElem);
-        localElem[config.restangularFields.trace] = _.bind(traceFunction, localElem);
-        localElem[config.restangularFields.options] = _.bind(optionsFunction, localElem);
-        localElem[config.restangularFields.patch] = _.bind(patchFunction, localElem);
-        localElem[config.restangularFields.save] = _.bind(save, localElem);
-
-        addCustomOperation(localElem);
         return config.transformElem(localElem, false, route, service, true);
       }
 
       function restangularizeCollection(parent, element, route, fromServer, reqParams) {
         var elem = config.onBeforeElemRestangularized(element, true, route);
 
-        var localElem = restangularizeBase(parent, elem, route, reqParams, fromServer);
-        localElem[config.restangularFields.restangularCollection] = true;
-        localElem[config.restangularFields.post] = _.bind(postFunction, localElem, null);
-        localElem[config.restangularFields.remove] = _.bind(deleteFunction, localElem);
-        localElem[config.restangularFields.head] = _.bind(headFunction, localElem);
-        localElem[config.restangularFields.trace] = _.bind(traceFunction, localElem);
-        localElem[config.restangularFields.putElement] = _.bind(putElementFunction, localElem);
-        localElem[config.restangularFields.options] = _.bind(optionsFunction, localElem);
-        localElem[config.restangularFields.patch] = _.bind(patchFunction, localElem);
-        localElem[config.restangularFields.get] = _.bind(getById, localElem);
-        localElem[config.restangularFields.getList] = _.bind(fetchFunction, localElem, null);
+        var localElem;
+        if (config.usePlain && fromServer) {
+          localElem = elem;
+        } else {
+          localElem = restangularizeBase(parent, elem, route, reqParams, fromServer);
+          localElem[config.restangularFields.restangularCollection] = true;
+          localElem[config.restangularFields.post] = _.bind(postFunction, localElem, null);
+          localElem[config.restangularFields.remove] = _.bind(deleteFunction, localElem);
+          localElem[config.restangularFields.head] = _.bind(headFunction, localElem);
+          localElem[config.restangularFields.trace] = _.bind(traceFunction, localElem);
+          localElem[config.restangularFields.putElement] = _.bind(putElementFunction, localElem);
+          localElem[config.restangularFields.options] = _.bind(optionsFunction, localElem);
+          localElem[config.restangularFields.patch] = _.bind(patchFunction, localElem);
+          localElem[config.restangularFields.get] = _.bind(getById, localElem);
+          localElem[config.restangularFields.getList] = _.bind(fetchFunction, localElem, null);
 
-        addCustomOperation(localElem);
+          addCustomOperation(localElem);
+        }
+
         return config.transformElem(localElem, true, route, service, true);
       }
 
